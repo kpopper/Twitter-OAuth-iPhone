@@ -26,7 +26,6 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 
 @interface SA_OAuthTwitterController ()
 - (UIView *)pinEntryView;
-- (NSString *)locateAuthPinInWebView:(UIWebView *)webView;
 @end
 
 @implementation SA_OAuthTwitterController
