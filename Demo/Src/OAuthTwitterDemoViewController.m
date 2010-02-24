@@ -10,8 +10,8 @@
 #import "SA_OAuthTwitterEngine.h"
 
 
-#define kOAuthConsumerKey				@""		//REPLACE ME
-#define kOAuthConsumerSecret			@""		//REPLACE ME
+#define kOAuthConsumerKey				@"ZBREPFd93vg6V4g05j3XA"		//REPLACE ME
+#define kOAuthConsumerSecret			@"QddNgQkrNF0EY6MY3tGxIjjTjRzh5Rc1cLkXGS5zHo"		//REPLACE ME
 
 
 @implementation OAuthTwitterDemoViewController
@@ -21,6 +21,8 @@
 //=============================================================================================================================
 #pragma mark SA_OAuthTwitterEngineDelegate
 - (void) storeCachedTwitterOAuthData: (NSString *) data forUsername: (NSString *) username {
+	return;
+	
 	NSUserDefaults			*defaults = [NSUserDefaults standardUserDefaults];
 
 	[defaults setObject: data forKey: @"authData"];
@@ -28,6 +30,7 @@
 }
 
 - (NSString *) cachedTwitterOAuthDataForUsername: (NSString *) username {
+	return nil;
 	return [[NSUserDefaults standardUserDefaults] objectForKey: @"authData"];
 }
 

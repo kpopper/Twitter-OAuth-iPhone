@@ -24,6 +24,11 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 - (void) setDetectsPhoneNumbers: (BOOL) detects;
 @end
 
+@interface SA_OAuthTwitterController ()
+- (UIView *)pinEntryView;
+- (NSString *)locateAuthPinInWebView:(UIWebView *)webView;
+@end
+
 @implementation SA_OAuthTwitterController
 @synthesize engine = _engine, delegate = _delegate, navigationBar = _navBar, orientation = _orientation;
 
@@ -63,7 +68,6 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 		self.engine = engine;
 		if (!engine.OAuthSetup) [_engine requestRequestToken];
 		self.orientation = theOrientation;
-		_firstLoad = YES;
 		
 		if (UIInterfaceOrientationIsLandscape( self.orientation ) )
 			_webView = [[UIWebView alloc] initWithFrame: CGRectMake(0, 32, 480, 288)];
@@ -72,7 +76,7 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 		
 		_webView.alpha = 0.0;
 		_webView.delegate = self;
-		_webView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		//_webView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 		if ([_webView respondsToSelector: @selector(setDetectsPhoneNumbers:)]) [(id) _webView setDetectsPhoneNumbers: NO];
 		if ([_webView respondsToSelector: @selector(setDataDetectorTypes:)]) [(id) _webView setDataDetectorTypes: 0];
 		
@@ -110,12 +114,12 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 	_backgroundView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:kGGTwitterLoadingBackgroundImage]];
 	if ( UIInterfaceOrientationIsLandscape( self.orientation ) ) {
 		self.view = [[[UIView alloc] initWithFrame: CGRectMake(0, 0, 480, 288)] autorelease];	
-		_backgroundView.frame =  CGRectMake(0, 44, 480, 288);
+		_backgroundView.frame =  CGRectMake(0, 0, 480, 288);
 		
 		_navBar = [[[UINavigationBar alloc] initWithFrame: CGRectMake(0, 0, 480, 32)] autorelease];
 	} else {
 		self.view = [[[UIView alloc] initWithFrame: CGRectMake(0, 0, 320, 416)] autorelease];	
-		_backgroundView.frame =  CGRectMake(0, 44, 320, 416);
+		_backgroundView.frame =  CGRectMake(0, 0, 320, 416);
 		_navBar = [[[UINavigationBar alloc] initWithFrame: CGRectMake(0, 0, 320, 44)] autorelease];
 	}
 	_navBar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin;
@@ -124,8 +128,18 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 
 	if (!UIInterfaceOrientationIsLandscape( self.orientation)) [self.view addSubview:_backgroundView];
 	
-	[self.view addSubview: _webView];
 	[self.view addSubview: _navBar];
+
+	UIView *pinEntryView = [self pinEntryView];
+	[[self view] addSubview:pinEntryView];
+	
+	CGRect webFrame = _webView.frame;
+	CGFloat pinHeight = pinEntryView.frame.size.height;
+	webFrame.origin.y += pinHeight;
+	webFrame.size.height -= pinHeight;
+	_webView.frame = webFrame;
+	
+	[self.view addSubview: _webView];
 	
 	_blockerView = [[[UIView alloc] initWithFrame: CGRectMake(0, 0, 200, 60)] autorelease];
 	_blockerView.backgroundColor = [UIColor colorWithWhite: 0.0 alpha: 0.8];
@@ -134,7 +148,7 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 	_blockerView.clipsToBounds = YES;
 	if ([_blockerView.layer respondsToSelector: @selector(setCornerRadius:)]) [(id) _blockerView.layer setCornerRadius: 10];
 	
-	UILabel								*label = [[[UILabel alloc] initWithFrame: CGRectMake(0, 5, _blockerView.bounds.size.width, 15)] autorelease];
+	UILabel *label = [[[UILabel alloc] initWithFrame: CGRectMake(0, 5, _blockerView.bounds.size.width, 15)] autorelease];
 	label.text = NSLocalizedString(@"Please Wait…", nil);
 	label.backgroundColor = [UIColor clearColor];
 	label.textColor = [UIColor whiteColor];
@@ -142,80 +156,102 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 	label.font = [UIFont boldSystemFontOfSize: 15];
 	[_blockerView addSubview: label];
 	
-	UIActivityIndicatorView				*spinner = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle: UIActivityIndicatorViewStyleWhite] autorelease];
+	UIActivityIndicatorView *spinner = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle: UIActivityIndicatorViewStyleWhite] autorelease];
 	
 	spinner.center = CGPointMake(_blockerView.bounds.size.width / 2, _blockerView.bounds.size.height / 2 + 10);
 	[_blockerView addSubview: spinner];
 	[self.view addSubview: _blockerView];
 	[spinner startAnimating];
 	
-	UINavigationItem				*navItem = [[[UINavigationItem alloc] initWithTitle: NSLocalizedString(@"Twitter Info", nil)] autorelease];
+	UINavigationItem *navItem = [[[UINavigationItem alloc] initWithTitle: NSLocalizedString(@"Twitter Info", nil)] autorelease];
 	navItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem: UIBarButtonSystemItemCancel target: self action: @selector(cancel:)] autorelease];
 	
 	[_navBar pushNavigationItem: navItem animated: NO];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-    return YES;
+    return (interfaceOrientation == UIInterfaceOrientationPortrait);
 }
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation) fromInterfaceOrientation {
 	self.orientation = self.interfaceOrientation;
 	_blockerView.center = CGPointMake(self.view.bounds.size.width / 2, self.view.bounds.size.height / 2);
-//	[self performInjection];			//removed due to twitter update
 }
 
 //=============================================================================================================================
 #pragma mark Webview Delegate stuff
-- (void) webViewDidFinishLoad: (UIWebView *) webView {
+- (void)webViewDidFinishLoad:(UIWebView *)webView
+{
 	_loading = NO;
-	//[self performInjection];
-	if (_firstLoad) {
-		[_webView performSelector: @selector(stringByEvaluatingJavaScriptFromString:) withObject: @"window.scrollBy(0,200)" afterDelay: 0];
-		_firstLoad = NO;
-	}
 
-	NSString					*authPin = [self locateAuthPinInWebView: webView];
+	NSString *authPin = [self locateAuthPinInWebView: webView];
 	
 	[UIView beginAnimations: nil context: nil];
 	_blockerView.alpha = 0.0;
 	[UIView commitAnimations];
 	
-	if (authPin.length) {
+	if (authPin.length)
+	{
 		[self gotPin: authPin];
-	} 
-	if ([_webView isLoading] || authPin.length) {
+	}
+	
+	if ([_webView isLoading] || authPin.length)
+	{
 		_webView.alpha = 0.0;
-	} else {
+	}
+	else
+	{
 		_webView.alpha = 1.0;
 	}
 }
 
-- (NSString *) locateAuthPinInWebView: (UIWebView *) webView {
-	NSString			*authPin = [[_webView stringByEvaluatingJavaScriptFromString: @"document.getElementById('oauth_pin').innerHTML"] stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+- (NSString *)locateAuthPinInWebView:(UIWebView *)webView 
+{
+	NSString *authPin = [[_webView stringByEvaluatingJavaScriptFromString: @"document.getElementById('oauth_pin').innerHTML"] stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
 	if (authPin.length == 0) authPin = [[_webView stringByEvaluatingJavaScriptFromString: @"document.getElementById('oauth-pin').innerHTML"] stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
 	return authPin;
 }
 
-- (void) performInjection {
-	if (_loading) return;
+- (UIView *)pinEntryView
+{
+	UIView *pinEntryView = [[[UIView alloc] initWithFrame:CGRectMake(0, 44, 320, 80)] autorelease];
+	[pinEntryView setBackgroundColor:[UIColor blackColor]];
 	
-	NSError					*error;
-	NSString				*filename = UIInterfaceOrientationIsLandscape(self.orientation ) ? @"jQueryInjectLandscape" : @"jQueryInject";
-	NSString				*path = [[NSBundle mainBundle] pathForResource: filename ofType: @"txt"];
+	UILabel *helpText = [[[UILabel alloc] initWithFrame:CGRectMake(10, 10, 300, 16)] autorelease];
+	[helpText setText:@"Copy & paste the seven-digit PIN displayed below"];
+	[helpText setBackgroundColor:[UIColor clearColor]];
+	[helpText setTextColor:[UIColor whiteColor]];
+	[helpText setFont:[UIFont systemFontOfSize:13]];
+	[pinEntryView addSubview:helpText];
 	
-    NSString *dataSource = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
+	UITextField *pinEntryField = [[[UITextField alloc] initWithFrame:CGRectMake(10, 38, 120, 26)] autorelease];
+	[pinEntryField setBorderStyle:UITextBorderStyleBezel];
+	[pinEntryField setBackgroundColor:[UIColor whiteColor]];
+	[pinEntryField setTag:111];
+	[pinEntryField setKeyboardType:UIKeyboardTypeNumberPad];
+	[pinEntryField setFont:[UIFont systemFontOfSize:16]];
+	[pinEntryView addSubview:pinEntryField];
 	
-    if (dataSource == nil) {
-        NSLog(@"An error occured while processing the jQueryInject file");
-    }
+	UIButton *submitButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+	[submitButton setTitle:@"Go" forState:UIControlStateNormal];
+	[submitButton setFont:[UIFont boldSystemFontOfSize:16]];
+	[submitButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+	[submitButton setFrame:CGRectMake(150, 39, 50, 24)];
+	[submitButton addTarget:self action:@selector(processPinEntry) forControlEvents:UIControlEventTouchUpInside];
+	[pinEntryView addSubview:submitButton];
 	
-	[_webView stringByEvaluatingJavaScriptFromString:dataSource]; //This line injects the jQuery to make it look better	
+	return pinEntryView;
 }
 
-- (void) webViewDidStartLoad: (UIWebView *) webView {
-	//[_activityIndicator startAnimating];
+- (void)processPinEntry
+{
+	UITextField *pinField = (UITextField *)[[self view] viewWithTag:111];
+	[self gotPin:[pinField text]];
+}
+
+- (void) webViewDidStartLoad: (UIWebView *) webView 
+{
 	_loading = YES;
 	[UIView beginAnimations: nil context: nil];
 	_blockerView.alpha = 1.0;
