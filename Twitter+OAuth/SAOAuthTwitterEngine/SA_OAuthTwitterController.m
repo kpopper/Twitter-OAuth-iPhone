@@ -97,7 +97,10 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 	_engine.pin = pin;
 	[_engine requestAccessToken];
 	
-	if ([_delegate respondsToSelector: @selector(OAuthTwitterController:authenticatedWithUsername:)]) [_delegate OAuthTwitterController: self authenticatedWithUsername: _engine.username];
+	if ([_delegate respondsToSelector: @selector(OAuthTwitterController:authenticatedWithUsername:)]) 
+	{
+		[_delegate OAuthTwitterController: self authenticatedWithUsername: _engine.username];
+	}
 	[self performSelector: @selector(dismissModalViewControllerAnimated:) withObject: (id) kCFBooleanTrue afterDelay: 1.0];
 }
 
@@ -200,29 +203,29 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 
 - (UIView *)pinEntryView
 {
-	UIView *pinEntryView = [[[UIView alloc] initWithFrame:CGRectMake(0, 44, 320, 80)] autorelease];
+	UIView *pinEntryView = [[[UIView alloc] initWithFrame:CGRectMake(0, 44, 320, 40)] autorelease];
 	[pinEntryView setBackgroundColor:[UIColor blackColor]];
 	
-	UILabel *helpText = [[[UILabel alloc] initWithFrame:CGRectMake(10, 10, 300, 16)] autorelease];
-	[helpText setText:@"Copy & paste the seven-digit PIN displayed below"];
+	UILabel *helpText = [[[UILabel alloc] initWithFrame:CGRectMake(10, 10, 165, 20)] autorelease];
+	[helpText setText:@"Sign in then copy/paste PIN"];
 	[helpText setBackgroundColor:[UIColor clearColor]];
 	[helpText setTextColor:[UIColor whiteColor]];
 	[helpText setFont:[UIFont systemFontOfSize:13]];
 	[pinEntryView addSubview:helpText];
 	
-	UITextField *pinEntryField = [[[UITextField alloc] initWithFrame:CGRectMake(10, 38, 120, 26)] autorelease];
+	UITextField *pinEntryField = [[[UITextField alloc] initWithFrame:CGRectMake(180, 7, 70, 24)] autorelease];
 	[pinEntryField setBorderStyle:UITextBorderStyleBezel];
 	[pinEntryField setBackgroundColor:[UIColor whiteColor]];
 	[pinEntryField setTag:111];
 	[pinEntryField setKeyboardType:UIKeyboardTypeNumberPad];
-	[pinEntryField setFont:[UIFont systemFontOfSize:16]];
+	[pinEntryField setFont:[UIFont systemFontOfSize:13]];
 	[pinEntryView addSubview:pinEntryField];
 	
 	UIButton *submitButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	[submitButton setTitle:@"Go" forState:UIControlStateNormal];
 	[submitButton setFont:[UIFont boldSystemFontOfSize:16]];
 	[submitButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-	[submitButton setFrame:CGRectMake(150, 39, 50, 24)];
+	[submitButton setFrame:CGRectMake(260, 7, 50, 24)];
 	[submitButton addTarget:self action:@selector(processPinEntry) forControlEvents:UIControlEventTouchUpInside];
 	[pinEntryView addSubview:submitButton];
 	
@@ -232,7 +235,10 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 - (void)processPinEntry
 {
 	UITextField *pinField = (UITextField *)[[self view] viewWithTag:111];
-	[self gotPin:[pinField text]];
+	if([[pinField text] length] > 0)
+	{
+		[self gotPin:[pinField text]];
+	}
 }
 
 - (void) webViewDidStartLoad: (UIWebView *) webView 
