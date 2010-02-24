@@ -222,7 +222,7 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 	
 	UIButton *submitButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	[submitButton setTitle:@"Go" forState:UIControlStateNormal];
-	[submitButton setFont:[UIFont boldSystemFontOfSize:16]];
+	[[submitButton titleLabel] setFont:[UIFont boldSystemFontOfSize:16]];
 	[submitButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
 	[submitButton setFrame:CGRectMake(260, 7, 50, 24)];
 	[submitButton addTarget:self action:@selector(processPinEntry) forControlEvents:UIControlEventTouchUpInside];
@@ -236,7 +236,7 @@ static NSString* const kGGTwitterLoadingBackgroundImage = @"twitter_load.png";
 	UITextField *pinField = (UITextField *)[[self view] viewWithTag:111];
 	if([[pinField text] length] > 0)
 	{
-		[self gotPin:[pinField text]];
+		[self gotPin:[[pinField text] copy]];
 	}
 }
 
