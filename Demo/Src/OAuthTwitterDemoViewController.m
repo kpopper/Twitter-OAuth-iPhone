@@ -10,8 +10,8 @@
 #import "SA_OAuthTwitterEngine.h"
 
 
-#define kOAuthConsumerKey				@"ZBREPFd93vg6V4g05j3XA"		//REPLACE ME
-#define kOAuthConsumerSecret			@"QddNgQkrNF0EY6MY3tGxIjjTjRzh5Rc1cLkXGS5zHo"		//REPLACE ME
+#define kOAuthConsumerKey				@""		//REPLACE ME
+#define kOAuthConsumerSecret			@""		//REPLACE ME
 
 
 @implementation OAuthTwitterDemoViewController
